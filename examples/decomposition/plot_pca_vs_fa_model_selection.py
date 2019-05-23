@@ -42,7 +42,7 @@ print(__doc__)
 # #############################################################################
 # Create the data
 
-n_samples, n_features, rank = 1000, 50, 10
+n_samples, n_features, rank = 500, 25, 10
 sigma = 1.
 rng = np.random.RandomState(42)
 U, _, _ = linalg.svd(rng.randn(n_features, n_features))
@@ -60,7 +60,6 @@ X_hetero = X + rng.randn(n_samples, n_features) * sigmas
 
 n_components = np.arange(0, n_features, 5)  # options for n_components
 
-
 def compute_scores(X):
     pca = PCA(svd_solver='full')
     fa = FactorAnalysis()
@@ -69,24 +68,25 @@ def compute_scores(X):
     for n in n_components:
         pca.n_components = n
         fa.n_components = n
-        pca_scores.append(np.mean(cross_val_score(pca, X, cv=5)))
-        fa_scores.append(np.mean(cross_val_score(fa, X, cv=5)))
+        pca_scores.append(np.mean(cross_val_score(pca, X, cv=3)))
+        fa_scores.append(np.mean(cross_val_score(fa, X, cv=3)))
 
     return pca_scores, fa_scores
 
 
 def shrunk_cov_score(X):
     shrinkages = np.logspace(-2, 0, 30)
-    cv = GridSearchCV(ShrunkCovariance(), {'shrinkage': shrinkages}, cv=5)
-    return np.mean(cross_val_score(cv.fit(X).best_estimator_, X, cv=5))
+    cv = GridSearchCV(ShrunkCovariance(), {'shrinkage': shrinkages}, cv=3)
+    return np.mean(cross_val_score(cv.fit(X).best_estimator_, X, cv=3))
 
 
 def lw_score(X):
-    return np.mean(cross_val_score(LedoitWolf(), X, cv=5))
+    return np.mean(cross_val_score(LedoitWolf(), X, cv=3))
 
 
-for X, title in [(X_homo, 'Homoscedastic Noise'),
-                 (X_hetero, 'Heteroscedastic Noise')]:
+fig, (left, mid, right) = plt.subplots(1,3, figsize=(9, 3))
+for X, title, ax in [(X_homo, 'Homoscedastic Noise', left),
+                 (X_hetero, 'Heteroscedastic Noise', right)]:
     pca_scores, fa_scores = compute_scores(X)
     n_components_pca = n_components[np.argmax(pca_scores)]
     n_components_fa = n_components[np.argmax(fa_scores)]
@@ -95,31 +95,42 @@ for X, title in [(X_homo, 'Homoscedastic Noise'),
     pca.fit(X)
     n_components_pca_mle = pca.n_components_
 
-    print("best n_components by PCA CV = %d" % n_components_pca)
-    print("best n_components by FactorAnalysis CV = %d" % n_components_fa)
-    print("best n_components by PCA MLE = %d" % n_components_pca_mle)
+    print("- "*3 + title + " -"*3)
+    print("      method         best n " % n_components_pca)
+    print("- "*17)
+    print("      PCA CV          %d" % n_components_pca)
+    print("      PCA MLE         %d" % n_components_pca_mle)
+    print("      FA CV           %d" % n_components_fa)
+    print("      truth           %d\n" % rank)
 
-    plt.figure()
-    plt.plot(n_components, pca_scores, 'b', label='PCA scores')
-    plt.plot(n_components, fa_scores, 'r', label='FA scores')
-    plt.axvline(rank, color='g', label='TRUTH: %d' % rank, linestyle='-')
-    plt.axvline(n_components_pca, color='b',
+    ax.plot(n_components, pca_scores, 'b', label='PCA scores')
+    ax.plot(n_components, fa_scores, 'r', label='FA scores')
+    ax.axvline(rank, color='g', label='TRUTH', linestyle='-', lw=3, alpha=0.5)
+    ax.axvline(n_components_pca, color='b',
                 label='PCA CV: %d' % n_components_pca, linestyle='--')
-    plt.axvline(n_components_fa, color='r',
-                label='FactorAnalysis CV: %d' % n_components_fa,
+    ax.axvline(n_components_fa, color='r',
+                label='FA CV',
                 linestyle='--')
-    plt.axvline(n_components_pca_mle, color='k',
-                label='PCA MLE: %d' % n_components_pca_mle, linestyle='--')
+    ax.axvline(n_components_pca_mle, color='k',
+                label='PCA MLE', linestyle='--')
 
     # compare with other covariance estimators
-    plt.axhline(shrunk_cov_score(X), color='violet',
+    ax.axhline(shrunk_cov_score(X), color='violet',
                 label='Shrunk Covariance MLE', linestyle='-.')
-    plt.axhline(lw_score(X), color='orange',
+    ax.axhline(lw_score(X), color='orange',
                 label='LedoitWolf MLE' % n_components_pca_mle, linestyle='-.')
 
-    plt.xlabel('nb of components')
-    plt.ylabel('CV scores')
-    plt.legend(loc='lower right')
-    plt.title(title)
+    ax.set_xlabel('nb of components')
+    ax.set_ylabel('CV scores')
+    ax.set_title(title)
+
+right.yaxis.tick_right()
+right.yaxis.set_label_position("right")
+
+left.legend(
+loc='upper right',
+bbox_to_anchor=(1.8, 0, 0.5, 1),
+frameon=False)
+mid.set_axis_off()
 
 plt.show()
