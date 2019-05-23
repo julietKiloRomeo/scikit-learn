@@ -84,9 +84,9 @@ def lw_score(X):
     return np.mean(cross_val_score(LedoitWolf(), X, cv=3))
 
 
-fig, (left, mid, right) = plt.subplots(1,3, figsize=(9, 3))
+fig, (left, mid, right) = plt.subplots(1, 3, figsize=(9, 3))
 for X, title, ax in [(X_homo, 'Homoscedastic Noise', left),
-                 (X_hetero, 'Heteroscedastic Noise', right)]:
+                     (X_hetero, 'Heteroscedastic Noise', right)]:
     pca_scores, fa_scores = compute_scores(X)
     n_components_pca = n_components[np.argmax(pca_scores)]
     n_components_fa = n_components[np.argmax(fa_scores)]
@@ -107,12 +107,12 @@ for X, title, ax in [(X_homo, 'Homoscedastic Noise', left),
     ax.plot(n_components, fa_scores, 'r', label='FA scores')
     ax.axvline(rank, color='g', label='TRUTH', linestyle='-', lw=3, alpha=0.5)
     ax.axvline(n_components_pca, color='b',
-                label='PCA CV: %d' % n_components_pca, linestyle='--')
+               label='PCA CV: %d' % n_components_pca, linestyle='--')
     ax.axvline(n_components_fa, color='r',
-                label='FA CV',
-                linestyle='--')
+               label='FA CV',
+               linestyle='--')
     ax.axvline(n_components_pca_mle, color='k',
-                label='PCA MLE', linestyle='--')
+               label='PCA MLE', linestyle='--')
 
     # compare with other covariance estimators
     ax.axhline(shrunk_cov_score(X), color='violet',
@@ -128,9 +128,9 @@ right.yaxis.tick_right()
 right.yaxis.set_label_position("right")
 
 left.legend(
-loc='upper right',
-bbox_to_anchor=(1.8, 0, 0.5, 1),
-frameon=False)
+    loc='upper right',
+    bbox_to_anchor=(1.8, 0, 0.5, 1),
+    frameon=False)
 mid.set_axis_off()
 
 plt.show()
